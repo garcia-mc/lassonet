@@ -6,33 +6,47 @@ from sklearn.preprocessing import scale
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import genfromtxt
 
-from lassonet import LassoNetRegressor, plot_path
+from interfaces import LassoNetRegressor
+from utils import plot_path
+
+datos=genfromtxt('carlosacel.csv', delimiter=',')[1: , :]
+
+C=datos[:,7]
+T=datos[:,8]
+
+X=datos[:,[19,20]]
 
 
-dataset = load_diabetes()
+X2=datos[:,range(59,80)]
+#dataset = load_diabetes()
 X = dataset.data
 y = dataset.target
 _, true_features = X.shape
 # add dummy feature
 X = np.concatenate([X, np.random.randn(*X.shape)], axis=1)
-feature_names = list(dataset.feature_names) + ["fake"] * true_features
+#y = np.stack([y, np.random.binomial(1, 0.8, *y.shape)], axis=1)
+X = np.concatenate([X1, X2], axis=1)
+y = np.stack([T, C], axis=1)
+
+#feature_names = list(dataset.feature_names) + ["fake"] * true_features
 
 # standardize
 X = StandardScaler().fit_transform(X)
-y = scale(y)
+
 
 
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 model = LassoNetRegressor(
-    hidden_dims=(10,),
+    hidden_dims=(5,),
     eps_start=0.1,
     verbose=True,
 )
 path = model.path(X_train, y_train)
 
-plot_path(model, path, X_test, y_test)
+plot_path(model, path, X_test, y_test[:,0])
 
 plt.savefig("diabetes.png")
 
