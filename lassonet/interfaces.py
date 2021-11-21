@@ -14,11 +14,38 @@ from sklearn.base import (
 from sklearn.model_selection import train_test_split
 import torch
 
-from .model import LassoNet
+from model import LassoNet
 
 
 def abstractattr(f):
     return property(abstractmethod(f))
+
+def lox(betaz, timesdeltas):
+    times=timesdeltas[:,0]
+    n=len(times)
+    deltas=timesdeltas[:,1].reshape(n,1)
+
+    n=len(deltas)
+    M=np.zeros((n,n))
+    ebetaz=torch.exp(betaz)
+    for i in range(n):
+        M[i,:]=np.greater_equal(times,times[i])*1
+    Mt=torch.from_numpy(M)
+    mul=torch.matmul(Mt.double(),ebetaz.double())
+    loga=torch.log(mul)
+    resta=(betaz-loga)
+    #print(Mt)
+    #print(mul.shape)
+
+    #print(resta.shape)
+    #print(deltas.shape)
+
+    presum=(torch.mul(resta,deltas))
+    #print(presum)
+
+    res=torch.sum(presum)
+    #print(res/n)
+    return -res
 
 
 @dataclass
@@ -166,10 +193,13 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
     @abstractattr
     def criterion(cls):
         raise NotImplementedError
+        
+   
+
 
     def _init_model(self, X, y):
         """Create a torch model"""
-        output_shape = self._output_shape(y)
+        output_shape = 1#self._output_shape(y)
         if self.torch_seed is not None:
             torch.manual_seed(self.torch_seed)
         self.model = LassoNet(
@@ -209,12 +239,17 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         def validation_obj():
             with torch.no_grad():
                 model.eval()
+
                 return (
-                    self.criterion(model(X_val), y_val).item()
+                    #self.criterion(model(X_val).data, y_val).item()
+                    lox(model(X_val),y_val).item()
                     + lambda_ * model.l1_regularization_skip().item()
                     + self.gamma * model.l2_regularization().item()
                     + self.gamma_skip * model.l2_regularization_skip().item()
                 )
+        #print(X_val.shape)
+    
+        #print(model(X_val).data)
 
         best_val_obj = validation_obj()
         epochs_since_best_val_obj = 0
@@ -245,11 +280,14 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                     nonlocal loss
                     optimizer.zero_grad()
                     ans = (
-                        self.criterion(model(X_train[batch]), y_train[batch])
+                        #self.criterion(model(X_train[batch]), y_train[batch])
+                        lox(model(X_train[batch]),y_train[batch])
+                        
                         + self.gamma * model.l2_regularization()
                         + self.gamma_skip * model.l2_regularization_skip()
                     )
                     ans.backward()
+                    #print(ans.item())
                     loss += ans.item() * len(batch) / n_train
                     return ans
 
