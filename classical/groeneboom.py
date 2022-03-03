@@ -6,32 +6,42 @@ This is a temporary script file.
 """
 import numpy as np
 
-
+data=icgen()
 class afunc:
-  def __init__(self, delta1,delta2,delta3,u,v,z):
-    self.delta1=delta1;
-    self.delta2=delta2;
-    self.delta3=delta3;
-    self.u=u;
-    self.v=v;
-    self.z=z;
+  def __init__(self, indata,cov):
+    
+    self.u=indata[:,0];
+    self.v=indata[:,1];
+    self.delta1=indata[:,2];
+    self.delta2=indata[:,3];
+    self.delta3=indata[:,4];
+    
+    self.z=cov;
+    
+    self.n=len(self.u)
 
-    self.Lambda=np.zeros(n);
+    self.Lambda=np.zeros(self.n);
+    
+    self.J1n=self.u[~ (self.delta3>0)]
+    self.J2n=self.v[~ (self.delta1>0)]
+
+
   
 
   def etz(self,theta):
       return np.exp(np.dot(theta,self.z))
   def necox(self,theta):
-      return np.exp(-self.Lambda*etz(theta))
+      return np.exp(-self.Lambda*self.etz(theta))
   def a1(self,theta):
-      return etz(theta)*necox(theta)/(1-necox(theta))
+      return self.etz(theta)*self.necox(theta)/(1-self.necox(theta))
     
   def a2(self,theta):
-      return etz(theta)*necox(theta)/(1-necox(theta))
+      return self.etz(theta)*self.necox(theta)/(1-self.necox(theta))
     
 
-p1 = Person("John", 36)
-p1.myfunc() 
+res=afunc(data,0).J1n
+
+
 
 # to continue read just before proposition 2.1 in wellner
 # is it true that we might not be able to use all the sample??? 
