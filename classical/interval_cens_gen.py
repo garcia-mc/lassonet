@@ -12,8 +12,8 @@ def icgen():
     n=20 # number of patients
     
     
-    k=5 # number of checkups
-    q=0.6 # probability of attendanding next checkup
+    k=9 # number of checkups
+    q=0.9 # probability of attendanding next checkup
     
     
     gamma=0.1
@@ -55,8 +55,12 @@ def icgen():
             v[i]=checkups[np.min(np.where(indsv))]
         else:
             d3[i]=1 # datum is right-censored
-            v[i]=float('inf')
+            v[i]=999
+        d2[i]=1-d1[i]-d3[i]
+
+        if(d2[i]==0): 
+            u[i],v[i]=v[i],u[i]
+        
             
-    d2=1-d1-d3
     np.column_stack((u,v,d1,d2,d3))
     return(np.column_stack((u,v,d1,d2,d3)))
