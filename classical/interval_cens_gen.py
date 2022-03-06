@@ -9,15 +9,15 @@ import numpy as np
 
 def icgen():
 
-    n=20 # number of patients
+    n=100 # number of patients
     
     
     k=9 # number of checkups
     q=0.9 # probability of attendanding next checkup
     
     
-    gamma=0.1
-    lam=0.1
+    gamma=5 # initially both 0.1
+    lam=0.8
     
     u=np.zeros(n)
     v=np.zeros(n)
