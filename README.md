@@ -1,5 +1,32 @@
 [![PyPI version](https://badge.fury.io/py/lassonet.svg)](https://badge.fury.io/py/lassonet)
 
+# How to load manually
+
+Go to /home/carlos/lassonet/lassonet in spyder upper right corner
+
+Do these changes 
+
+- in interfaces.py
+
+from .model -> from model
+
+- in model.py
+
+from .prox -> from prox
+
+Check if everything is alright:
+
+go to diabetes.py and replace 
+
+from lassonet import LassoNetRegressor, plot_path
+
+by 
+
+from interfaces import LassoNetRegressor
+from utils import plot_path
+
+
+
 # LassoNet
 
 This project is about performing feature selection in neural networks.

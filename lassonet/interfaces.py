@@ -4,6 +4,10 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List
 
+from L import L
+from preproc import preproc
+
+
 import numpy as np
 from sklearn.base import (
     BaseEstimator,
@@ -19,33 +23,6 @@ from model import LassoNet
 
 def abstractattr(f):
     return property(abstractmethod(f))
-
-def lox(betaz, timesdeltas):
-    times=timesdeltas[:,0]
-    n=len(times)
-    deltas=timesdeltas[:,1].reshape(n,1)
-
-    n=len(deltas)
-    M=np.zeros((n,n))
-    ebetaz=torch.exp(betaz)
-    for i in range(n):
-        M[i,:]=np.greater_equal(times,times[i])*1
-    Mt=torch.from_numpy(M)
-    mul=torch.matmul(Mt.double(),ebetaz.double())
-    loga=torch.log(mul)
-    resta=(betaz-loga)
-    #print(Mt)
-    #print(mul.shape)
-
-    #print(resta.shape)
-    #print(deltas.shape)
-
-    presum=(torch.mul(resta,deltas))
-    #print(presum)
-
-    res=torch.sum(presum)
-    #print(res/n)
-    return -res
 
 
 @dataclass
@@ -70,7 +47,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         hidden_dims=(100,),
         eps_start=1,
         lambda_start=None,
-        lambda_seq=None,
+        lambda_seq= [0.01],
         gamma=0.0,
         gamma_skip=0.0,
         path_multiplier=1.02,
@@ -78,11 +55,11 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         dropout=0,
         batch_size=None,
         optim=None,
-        n_iters=(1000, 100),
+        n_iters=(100, 10),
         patience=(100, 10),
         tol=0.99,
         backtrack=False,
-        val_size=0.1,
+        val_size=0.3,
         device=None,
         verbose=0,
         random_state=None,
@@ -154,8 +131,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         self.optim = optim
         if optim is None:
             optim = (
-                partial(torch.optim.Adam, lr=1e-3),
-                partial(torch.optim.SGD, lr=1e-3, momentum=0.9),
+                partial(torch.optim.Adam, lr=0.5),
+                partial(torch.optim.SGD, lr=0.5, momentum=0.9),
             )
         if isinstance(optim, partial):
             optim = (optim, optim)
@@ -180,6 +157,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
 
         self.model = None
 
+
     @abstractmethod
     def _convert_y(self, y) -> torch.TensorType:
         """Convert y to torch tensor"""
@@ -190,12 +168,9 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         """Number of model outputs"""
         raise NotImplementedError
 
-    @abstractattr
-    def criterion(cls):
-        raise NotImplementedError
-        
-   
-
+    # @abstractattr
+    # def criterion(cls):
+    #     raise NotImplementedError
 
     def _init_model(self, X, y):
         """Create a torch model"""
@@ -235,21 +210,36 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         patience=None,
     ) -> HistoryItem:
         model = self.model
+        preproc_train=preproc(y_train)
+        preproc_val=preproc(y_val)
 
+
+        self.mnonpar_train=L(preproc_train,X_train.numpy()) #
+        self.mnonpar_val=L(preproc_val,X_val.numpy()) #
+
+        
+
+        epoch=0
         def validation_obj():
+            
             with torch.no_grad():
                 model.eval()
+                if epoch % 20 == 0:
+                   
+                    print('Starting validation loss fit')
+                # print('X_val',X_val)
+                # print('Predictions',model(X_val))
+                    self.mnonpar_val.fit(model(X_val),20)
+                # print('Jumps of process G: ',mnonpar_val.Gj)
+                self.criterion_val = self.mnonpar_val.loss_wellner
+
 
                 return (
-                    #self.criterion(model(X_val).data, y_val).item()
-                    lox(model(X_val),y_val).item()
+                    self.criterion_val(model(X_val)).item()
                     + lambda_ * model.l1_regularization_skip().item()
                     + self.gamma * model.l2_regularization().item()
                     + self.gamma_skip * model.l2_regularization_skip().item()
                 )
-        #print(X_val.shape)
-    
-        #print(model(X_val).data)
 
         best_val_obj = validation_obj()
         epochs_since_best_val_obj = 0
@@ -261,6 +251,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         n_iters = 0
 
         n_train = len(X_train)
+        batch_size=None
         if batch_size is None:
             batch_size = n_train
             randperm = torch.arange
@@ -269,25 +260,31 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         batch_size = min(batch_size, n_train)
 
         for epoch in range(epochs):
+            print('epoch: ', epoch)
             indices = randperm(n_train)
             model.train()
+            if epoch % 20 == 0:
+                with torch.no_grad():
+                    model.eval()
+                    print('Starting training loss fit')
+    
+                    self.mnonpar_train.fit(model(X_train),20)
+                self.criterion_train=self.mnonpar_train.loss_wellner
             loss = 0
             for i in range(n_train // batch_size):
                 # don't take batches that are not full
                 batch = indices[i * batch_size : (i + 1) * batch_size]
+                # print('X_train[batch]',X_train[batch].shape)
 
                 def closure():
                     nonlocal loss
                     optimizer.zero_grad()
                     ans = (
-                        #self.criterion(model(X_train[batch]), y_train[batch])
-                        lox(model(X_train[batch]),y_train[batch])
-                        
+                        self.criterion_train(model(X_train[batch]))
                         + self.gamma * model.l2_regularization()
                         + self.gamma_skip * model.l2_regularization_skip()
                     )
                     ans.backward()
-                    #print(ans.item())
                     loss += ans.item() * len(batch) / n_train
                     return ans
 
@@ -313,7 +310,12 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                 n_iters = epoch + 1
             if patience is not None and epochs_since_best_val_obj == patience:
                 break
-
+            print('epoch {}, loss {}'.format(epoch, loss))
+            for param in model.parameters():
+                print(param)
+              
+            
+                
         if self.backtrack:
             self.model.load_state_dict(best_state_dict)
             val_obj = real_best_val_obj
@@ -500,8 +502,10 @@ class LassoNetRegressor(
     def _lambda_max(X, y):
         n_samples, _ = X.shape
         return torch.tensor(X.T.dot(y)).abs().max().item() / n_samples
+    
 
-    criterion = torch.nn.MSELoss(reduction="mean")
+
+
 
     def predict(self, X):
         with torch.no_grad():

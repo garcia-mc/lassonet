@@ -20,7 +20,18 @@ class LassoNet(nn.Module):
         self.layers = nn.ModuleList(
             [nn.Linear(dims[i], dims[i + 1]) for i in range(len(dims) - 1)]
         )
+        
+
+
         self.skip = nn.Linear(dims[0], dims[-1], bias=False)
+        print('Initializing weights')
+        for module in self.layers:
+            torch.nn.init.uniform_(module.weight, a=-0.05, b=0.05)
+            nn.init.constant_(module.bias, 0)
+        print('Initializing skip layer')
+        torch.nn.init.uniform_(self.skip.weight, a=-1.0, b=1.0)
+
+        
 
     def forward(self, inp):
         current_layer = inp

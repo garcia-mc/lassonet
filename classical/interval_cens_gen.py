@@ -9,7 +9,7 @@ import numpy as np
 
 def icgen():
 
-    n=100 # number of patients
+    n=500 # number of patients
     
     
     k=9 # number of checkups

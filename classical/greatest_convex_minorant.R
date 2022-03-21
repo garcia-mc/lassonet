@@ -31,5 +31,5 @@ final=newLambda[-1]
   
   
 
-write.table(final, file = "lassoxnet/classical/gcmandslopes.txt", 
+write.table(final, file = "~/lassoxnet/classical/gcmandslopes.txt", 
             sep = " ",row.names=FALSE,col.names=FALSE)

@@ -12,7 +12,6 @@ data=icgen() # 999 means infinity
 
 data=data.round(3)
 
-epsilon=0.2
 
 n=len(data)
 
@@ -109,82 +108,88 @@ Jinford=Jinfo[:,np.argsort(J)]
 
 
 Jinford[6,:]=Lambda0
+gcm=Lambda0
 
 #################################3
-
-
-Gjumps=np.zeros(m)
-Wjumps=np.zeros(m)
-
-# row 1 is patient id
-# row 2 is border type
-# row 3 is delta1
-# row 4 is delta2
-# row 5 is delta3
-# row 6 is Lambda
-
-for k in range(m):
+nitergr=10
+for i in range(nitergr):
+    Gjumps=np.zeros(m)
+    Wjumps=np.zeros(m)
     
-    if Jinford[2,k] == 2:
-        if Jinford[3,k] !=0:
-            Gjumps[k]=Gjumps[k] + model.a1(theta,Jinford[6,k],Jinford[1,k])**2
-        if Jinford[4,k] !=0:
-            Gjumps[k]=Gjumps[k] + model.a2(theta,Jinford[6,k],
-                                           Jinford[6,np.logical_and(Jinford[1,:]==Jinford[1,k],Jinford[2,:]==3)],Jinford[1,k])**2
-    if Jinford[2,k] == 3:
+    # row 1 is patient id
+    # row 2 is border type
+    # row 3 is delta1
+    # row 4 is delta2
+    # row 5 is delta3
+    # row 6 is Lambda
+    
+    for k in range(m):
         
-        if Jinford[4,k] !=0:
-            Gjumps[k]=Gjumps[k] + model.a3(theta,
-                                           Jinford[6,np.logical_and(Jinford[1,:]==Jinford[1,k],Jinford[2,:]==2)],Jinford[6,k],Jinford[1,k])**2
+        if Jinford[2,k] == 2:
+            if Jinford[3,k] !=0:
+                Gjumps[k]=Gjumps[k] + model.a1(theta,Jinford[6,k],Jinford[1,k])**2
+            if Jinford[4,k] !=0:
+                Gjumps[k]=Gjumps[k] + model.a2(theta,Jinford[6,k],
+                                               Jinford[6,np.logical_and(Jinford[1,:]==Jinford[1,k],Jinford[2,:]==3)],Jinford[1,k])**2
+        if Jinford[2,k] == 3:
+            
+            if Jinford[4,k] !=0:
+                Gjumps[k]=Gjumps[k] + model.a3(theta,
+                                               Jinford[6,np.logical_and(Jinford[1,:]==Jinford[1,k],Jinford[2,:]==2)],Jinford[6,k],Jinford[1,k])**2
+            
+            if Jinford[5,k] !=0:
+                Gjumps[k]=Gjumps[k] + model.etz(theta,Jinford[1,k])**2
+    
         
-        if Jinford[5,k] !=0:
-            Gjumps[k]=Gjumps[k] + model.etz(theta,Jinford[1,k])**2
+    for k in range(m):
+        
+        if Jinford[2,k] == 2:
+            if Jinford[3,k] !=0:
+                Wjumps[k]=Wjumps[k] + model.a1(theta,Jinford[6,k],Jinford[1,k])
+            if Jinford[4,k] !=0:
+                Wjumps[k]=Wjumps[k] - model.a2(theta,Jinford[6,k],
+                                               Jinford[6,np.logical_and(Jinford[1,:]==Jinford[1,k],Jinford[2,:]==3)],Jinford[1,k])
+        if Jinford[2,k] == 3:
+            
+            if Jinford[4,k] !=0:
+                Wjumps[k]=Wjumps[k] + model.a3(theta,
+                                               Jinford[6,np.logical_and(Jinford[1,:]==Jinford[1,k],Jinford[2,:]==2)],Jinford[6,k],Jinford[1,k])
+            
+            if Jinford[5,k] !=0:
+                Wjumps[k]=Wjumps[k] - model.etz(theta,Jinford[1,k])
+    
+    
+    #ts=J
+    
+    
+    # ts=np.linspace(4, 9, num=500)
+    #Gvalues=np.zeros(m)
+    W=np.zeros(m)
+    G=np.zeros(m)
+    integral=np.zeros(m)
+    
+    G=np.cumsum(Gjumps)
+    W=np.cumsum(Wjumps)
+    
+    integral=np.cumsum(Jinford[6,:]*Gjumps)
+    
+    
+    V=W+integral
+    
+    plt.plot(G, V)
+    plt.show()
+    plt.scatter(G,V ,s=0.1)
+    plt.show()
+    
+    np.savetxt('diagram.txt', (G,V))
+    gcm=robjects.globalenv['f'](robjects.FloatVector(G),robjects.FloatVector(V))
 
     
-for k in range(m):
-    
-    if Jinford[2,k] == 2:
-        if Jinford[3,k] !=0:
-            Wjumps[k]=Wjumps[k] + model.a1(theta,Jinford[6,k],Jinford[1,k])
-        if Jinford[4,k] !=0:
-            Wjumps[k]=Wjumps[k] - model.a2(theta,Jinford[6,k],
-                                           Jinford[6,np.logical_and(Jinford[1,:]==Jinford[1,k],Jinford[2,:]==3)],Jinford[1,k])
-    if Jinford[2,k] == 3:
-        
-        if Jinford[4,k] !=0:
-            Wjumps[k]=Wjumps[k] + model.a3(theta,
-                                           Jinford[6,np.logical_and(Jinford[1,:]==Jinford[1,k],Jinford[2,:]==2)],Jinford[6,k],Jinford[1,k])
-        
-        if Jinford[5,k] !=0:
-            Wjumps[k]=Wjumps[k] - model.etz(theta,Jinford[1,k])
+    Jinford[6,:]=gcm
 
-
-#ts=J
-
-
-# ts=np.linspace(4, 9, num=500)
-#Gvalues=np.zeros(m)
-W=np.zeros(m)
-G=np.zeros(m)
-integral=np.zeros(m)
-
-G=np.cumsum(Gjumps)
-W=np.cumsum(Wjumps)
-
-integral=np.cumsum(Jinford[6,:]*Gjumps)
-
-
-V=W+integral
-
-plt.plot(G, V)
+plt.plot(Jinford[0,:], H)
+plt.scatter(Jinford[0,:],gcm,s=0.5,c='black')
 plt.show()
-plt.scatter(G,V ,s=0.1)
-plt.show()
-
-np.savetxt('diagram.txt', (G,V))
-gcm=np.loadtxt('gcmandslopes.txt')
-
-Jinford[6,:]=gcm
 
 
 ###################################################
