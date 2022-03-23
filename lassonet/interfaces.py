@@ -47,7 +47,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         hidden_dims=(100,),
         eps_start=1,
         lambda_start=None,
-        lambda_seq= [0.01],
+        lambda_seq= [0.05],
         gamma=0.0,
         gamma_skip=0.0,
         path_multiplier=1.02,
@@ -55,7 +55,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         dropout=0,
         batch_size=None,
         optim=None,
-        n_iters=(100, 10),
+        n_iters=(1000, 100),
         patience=(100, 10),
         tol=0.99,
         backtrack=False,
@@ -224,7 +224,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             
             with torch.no_grad():
                 model.eval()
-                if epoch % 20 == 0:
+                if epoch % 50 == 0:
                    
                     print('Starting validation loss fit')
                 # print('X_val',X_val)
@@ -263,7 +263,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             print('epoch: ', epoch)
             indices = randperm(n_train)
             model.train()
-            if epoch % 20 == 0:
+            if epoch % 50 == 0:
                 with torch.no_grad():
                     model.eval()
                     print('Starting training loss fit')
@@ -380,7 +380,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                 X_val,
                 y_val,
                 batch_size=self.batch_size,
-                lambda_=0,
+                lambda_=0.5,
                 epochs=self.n_iters_init,
                 optimizer=self.optim_init(self.model.parameters()),
                 patience=self.patience_init,
@@ -409,7 +409,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                 lambda_seq = _lambda_seq(self.eps_start * hist[-1].val_loss)
 
         optimizer = self.optim_path(self.model.parameters())
-
+        print(lambda_seq)
         for current_lambda in lambda_seq:
             if self.model.selected_count() == 0:
                 break

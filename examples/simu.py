@@ -5,6 +5,10 @@ Created on Sun Mar 20 12:05:55 2022
 
 @author: carlos
 """
+
+import os
+os.chdir('/u/garciac/lassoxnet/lassonet')
+
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -14,7 +18,7 @@ from cox_gen import cox_gen
 
 import torch
 
-a = torch.ones(2000,1)*0.5
+a = torch.ones(1500,1)*0.5
 
 zt=torch.bernoulli(a)
 
@@ -37,7 +41,7 @@ X = np.concatenate([X, torch.bernoulli(a),torch.bernoulli(a),torch.bernoulli(a)]
 #feature_names = list(dataset.feature_names) + ["fake"] * true_features
 
 # standardize
-X = StandardScaler().fit_transform(X)
+# X = StandardScaler().fit_transform(X)
 
 from utils import plot_path
 
@@ -45,7 +49,7 @@ from interfaces import LassoNetRegressor
 
 
 model = LassoNetRegressor(
-    hidden_dims=(2,),
+    hidden_dims=(3,),
     eps_start=0.1,
     verbose=True,
 )
@@ -55,8 +59,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 path = model.path(X_train, y_train)
 
+# each element in path corresponds to a value of lambda
+
 for param in model.model.parameters():
     print(param)
+    
+
   
 ###########
     
