@@ -53,7 +53,7 @@ from interfaces import LassoNetRegressor
 
 
 model = LassoNetRegressor(
-    hidden_dims=(70,),
+    hidden_dims=(10,),
     eps_start=0.1,
     verbose=True,
 )
@@ -61,7 +61,7 @@ model = LassoNetRegressor(
 # X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 
-path = model.path(X, y) #pick lambda=0.2
+path = model.path(X, y) #pick lambda=0.2 M=
 
 path1=path
 

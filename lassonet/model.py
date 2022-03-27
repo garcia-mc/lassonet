@@ -26,10 +26,10 @@ class LassoNet(nn.Module):
         self.skip = nn.Linear(dims[0], dims[-1], bias=False)
         print('Initializing weights')
         for module in self.layers:
-            torch.nn.init.uniform_(module.weight, a=-0.005, b=0.005)
+            torch.nn.init.uniform_(module.weight, a=-0.05, b=0.05)
             nn.init.constant_(module.bias, 0)
         print('Initializing skip layer')
-        torch.nn.init.uniform_(self.skip.weight, a=-0.05, b=0.05)
+        torch.nn.init.uniform_(self.skip.weight, a=-1, b=1)
 
         
 

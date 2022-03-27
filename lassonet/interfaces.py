@@ -51,12 +51,12 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         gamma=0.0,
         gamma_skip=0.0,
         path_multiplier=1.02,
-        M=50,
+        M=5,
         dropout=0,
         batch_size=None,
         optim=None,
         n_iters=(1000, 100),
-        patience=(700, 70),
+        patience=(500, 10),
         tol=0.99,
         backtrack=False,
         val_size=0.3,
@@ -65,7 +65,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         random_state=None,
         torch_seed=None,
         final_run=True,
-        final_lambda=0
+        final_lambda=0.2
     ):
         """
         Parameters
@@ -133,8 +133,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         self.optim = optim
         if optim is None:
             optim = (
-                partial(torch.optim.Adam, lr=3e-2),
-                partial(torch.optim.SGD, lr=3e-2, momentum=0.9),
+                partial(torch.optim.Adam, lr=3e-1),
+                partial(torch.optim.SGD, lr=3e-1, momentum=0.9),
             )
         if isinstance(optim, partial):
             optim = (optim, optim)
@@ -229,7 +229,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             
             with torch.no_grad():
                 model.eval()
-                if ((epoch % 50 == 0) and denseflag):
+                if ((epoch % 20 == 0) and denseflag):
                    
                     print('Starting validation loss fit')
                 # print('X_val',X_val)
@@ -268,7 +268,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             print('epoch: ', epoch)
             indices = randperm(n_train)
             model.train()
-            if ((epoch % 50 == 0) and denseflag):
+            if ((epoch % 20 == 0) and denseflag):
                 with torch.no_grad():
                     model.eval()
                     print('Starting training loss fit')
@@ -317,8 +317,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                 break
             print('epoch {}, loss {}'.format(epoch, loss))
             for param in model.parameters():
-                pass
-            print(param)
+                print(param)
+            
               
             
                 

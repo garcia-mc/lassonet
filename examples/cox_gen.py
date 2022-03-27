@@ -29,7 +29,7 @@ def cox_gen(covariates,thetagen):
     
     # generation of latent times
     ut=np.random.uniform(low=0.0, high=1.0, size=n)
-    t=(1/gamma)*np.log(1-gamma*np.log(ut)*np.exp(-np.matmul(covariates,beta.transpose))/lam)
+    t=(1/gamma)*np.log(1-gamma*np.log(ut)*np.exp(-np.matmul(covariates,beta))/lam)
     
     
     
