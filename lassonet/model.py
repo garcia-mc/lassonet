@@ -18,7 +18,7 @@ class LassoNet(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout) if dropout is not None else None
         self.layers = nn.ModuleList(
-            [nn.Linear(dims[i], dims[i + 1]) for i in range(len(dims) - 1)]
+            [nn.Linear(dims[i], dims[i + 1], bias=True) for i in range(len(dims) - 1)] #original implementation had bias!!!
         )
         
 
@@ -26,10 +26,10 @@ class LassoNet(nn.Module):
         self.skip = nn.Linear(dims[0], dims[-1], bias=False)
         print('Initializing weights')
         for module in self.layers:
-            torch.nn.init.uniform_(module.weight, a=-0.05, b=0.05)
+            torch.nn.init.uniform_(module.weight, a=-0.005, b=0.005)
             nn.init.constant_(module.bias, 0)
         print('Initializing skip layer')
-        torch.nn.init.uniform_(self.skip.weight, a=-1.0, b=1.0)
+        torch.nn.init.uniform_(self.skip.weight, a=-0.05, b=0.05)
 
         
 

@@ -81,7 +81,7 @@ class L:
     
 
     self.m=int(self.JJ.shape[1])
-    self.eps1=1e-6
+    self.eps1=1e-5
 
     Lambda0=np.log(1/(1-np.cumsum(np.ones(self.m)/(self.m+1))))
 
@@ -120,7 +120,7 @@ class L:
 
       Jinford=self.JJ
       for i in range(nitergr):
-        eps2=1e-2
+        eps2=1e-5
         Gjumps=np.zeros(self.m)
         Wjumps=np.zeros(self.m)
         
@@ -150,6 +150,7 @@ class L:
                     Gjumps[k]=Gjumps[k] + self.etz(theta,Jinford[1,k])**2
         
             if Gjumps[k]<eps2:
+                # print(Gjumps[k])
                 Gjumps[k]=eps2
         for k in range(self.m):
             
@@ -174,6 +175,9 @@ class L:
         
         # ts=np.linspace(4, 9, num=500)
         #Gvalues=np.zeros(m)
+        self.jumps=Gjumps
+        Gjumps=Gjumps/self.m
+        Wjumps=Wjumps/self.m
         W=np.zeros(self.m)
         G=np.zeros(self.m)
         integral=np.zeros(self.m)
@@ -188,11 +192,13 @@ class L:
         
         # plt.plot(G, V)
         # plt.show()
-        # plt.scatter(G,V ,s=0.1)
-        # plt.show()
+        #plt.scatter(G,V ,s=0.1)
+        #plt.show()
         self.G=G
         self.V=V
         self.Gj=Gjumps
+        #print(G)
+        #print(V)
 
         gcm=robjects.globalenv['f'](robjects.FloatVector(G),robjects.FloatVector(V))
     

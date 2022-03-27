@@ -22,12 +22,12 @@ def plot_path(model, path, X_test, y_test, *, score_function=None):
         score_function must take as input X_test, y_test
     """
     if score_function is None:
-        score_fun = model.score
+        score_fun = 0#model.score
     else:
         assert callable(score_function)
 
         def score_fun(X_test, y_test):
-            return score_function(y_test, model.predict(X_test))
+            return 0 #score_function(y_test, model.predict(X_test))
 
     n_selected = []
     score = []
@@ -35,7 +35,7 @@ def plot_path(model, path, X_test, y_test, *, score_function=None):
     for save in path:
         model.load(save.state_dict)
         n_selected.append(save.selected.sum())
-        score.append(score_fun(X_test, y_test))
+        score.append(0)#score.append(score_fun(X_test, y_test))
         lambda_.append(save.lambda_)
 
     plt.figure(figsize=(8, 8))

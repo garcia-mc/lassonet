@@ -11,7 +11,7 @@ from lassonet import LassoNetRegressor, plot_path
 
 def linear():
     p = 10
-    n = 400
+    n = 1000
     coef = np.concatenate([np.random.choice([-1, 1], size=p), [0] * p])
     X = np.random.randn(n, 2 * p)
 

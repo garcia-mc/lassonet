@@ -47,16 +47,16 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         hidden_dims=(100,),
         eps_start=1,
         lambda_start=None,
-        lambda_seq= [0.05],
+        lambda_seq= np.exp(np.linspace(np.log(0.01),np.log(5),20)),
         gamma=0.0,
         gamma_skip=0.0,
         path_multiplier=1.02,
-        M=10,
+        M=50,
         dropout=0,
         batch_size=None,
         optim=None,
         n_iters=(1000, 100),
-        patience=(100, 10),
+        patience=(700, 70),
         tol=0.99,
         backtrack=False,
         val_size=0.3,
@@ -64,6 +64,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         verbose=0,
         random_state=None,
         torch_seed=None,
+        final_run=True,
+        final_lambda=0
     ):
         """
         Parameters
@@ -131,8 +133,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         self.optim = optim
         if optim is None:
             optim = (
-                partial(torch.optim.Adam, lr=0.5),
-                partial(torch.optim.SGD, lr=0.5, momentum=0.9),
+                partial(torch.optim.Adam, lr=3e-2),
+                partial(torch.optim.SGD, lr=3e-2, momentum=0.9),
             )
         if isinstance(optim, partial):
             optim = (optim, optim)
@@ -156,6 +158,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         self.torch_seed = torch_seed
 
         self.model = None
+        self.final_run = final_run
+        self.final_lambda = final_lambda
 
 
     @abstractmethod
@@ -208,6 +212,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         lambda_,
         optimizer,
         patience=None,
+        denseflag
     ) -> HistoryItem:
         model = self.model
         preproc_train=preproc(y_train)
@@ -224,14 +229,14 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             
             with torch.no_grad():
                 model.eval()
-                if epoch % 50 == 0:
+                if ((epoch % 50 == 0) and denseflag):
                    
                     print('Starting validation loss fit')
                 # print('X_val',X_val)
                 # print('Predictions',model(X_val))
-                    self.mnonpar_val.fit(model(X_val),20)
+                    self.mnonpar_val.fit(model(X_val),10)
                 # print('Jumps of process G: ',mnonpar_val.Gj)
-                self.criterion_val = self.mnonpar_val.loss_wellner
+                    self.criterion_val = self.mnonpar_val.loss_wellner
 
 
                 return (
@@ -263,12 +268,12 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             print('epoch: ', epoch)
             indices = randperm(n_train)
             model.train()
-            if epoch % 50 == 0:
+            if ((epoch % 50 == 0) and denseflag):
                 with torch.no_grad():
                     model.eval()
                     print('Starting training loss fit')
     
-                    self.mnonpar_train.fit(model(X_train),20)
+                    self.mnonpar_train.fit(model(X_train),10)
                 self.criterion_train=self.mnonpar_train.loss_wellner
             loss = 0
             for i in range(n_train // batch_size):
@@ -312,7 +317,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                 break
             print('epoch {}, loss {}'.format(epoch, loss))
             for param in model.parameters():
-                print(param)
+                pass
+            print(param)
               
             
                 
@@ -367,11 +373,36 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             X_train, y_train = X, y
         X_train, y_train = self._cast_input(X_train, y_train)
         X_val, y_val = self._cast_input(X_val, y_val)
+        X, y = self._cast_input(X, y)
+
 
         hist: List[HistoryItem] = []
 
         if self.model is None:
             self._init_model(X_train, y_train)
+        if self.final_run:
+            print('***Training with definite lambda***')
+            self._train(
+                X_train,
+                y_train,
+                X_val,
+                y_val,
+                batch_size=self.batch_size,
+                lambda_=self.final_lambda,
+                epochs=self.n_iters_init,
+                optimizer=self.optim_init(self.model.parameters()),
+                patience=self.patience_init,
+                denseflag=True
+            )
+            
+            with torch.no_grad():
+                self.model.eval()
+                preproc_full=preproc(y)
+                self.mnonpar_full=L(preproc_full,X.numpy()) 
+                self.mnonpar_full.fit(self.model(X),100)
+#
+
+            return
 
         hist.append(
             self._train(
@@ -380,19 +411,27 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                 X_val,
                 y_val,
                 batch_size=self.batch_size,
-                lambda_=0.5,
+                lambda_=0,
                 epochs=self.n_iters_init,
                 optimizer=self.optim_init(self.model.parameters()),
                 patience=self.patience_init,
+                denseflag=True
+                
             )
+            
         )
+        with torch.no_grad():
+            self.model.eval()
+            preproc_full=preproc(y)
+            self.mnonpar_full=L(preproc_full,X.numpy()) 
+            self.mnonpar_full.fit(self.model(X),50)
         if self.verbose:
             print(
                 f"Initialized dense model in {hist[-1].n_iters} epochs, "
                 f"val loss {hist[-1].val_loss:.2e}, "
                 f"regularization {hist[-1].regularization:.2e}"
             )
-
+        
         # build lambda_seq
         lambda_seq = self.lambda_seq
         if lambda_seq is None:
@@ -424,6 +463,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                     epochs=self.n_iters_path,
                     optimizer=optimizer,
                     patience=self.patience_path,
+                    denseflag=False
                 )
             )
             last = hist[-1]
