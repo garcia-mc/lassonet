@@ -16,7 +16,7 @@ from statsmodels.distributions.empirical_distribution import ECDF
 ecdf0 = ECDF(reference)
 ecdf1 = ECDF(treatment)
 
-theta=np.matrix([3.1,0,0,0]).transpose()
+theta=np.matrix([1.5,0,0,0]).transpose()
 Xt=torch.from_numpy(X)
 
 # in case it wasn't enough at the end of lassonet
@@ -24,6 +24,15 @@ Xt=torch.from_numpy(X)
 #    model.mnonpar_full.fit(model.model.forward(Xt),50)
 
 Jinford=model.mnonpar_full.JJ
+
+beta1=torch.Tensor([1,0,0,0])
+
+beta0=torch.Tensor([0,0,0,0])
+Xt1=Xt*beta1[None,:]
+Xt0=Xt*beta0[None,:]
+
+
+
 
 gamma=5
 lam=0.8
@@ -41,16 +50,19 @@ H1=np.asarray((lam/gamma)*np.multiply(np.asmatrix(np.exp(gamma*Jinford[0,Jinford
 plt.plot(Jinford[0,Jinford[7,:]==0], H0,c='blue')
 plt.plot(Jinford[0,Jinford[7,:]==1], H1,c='red')
 
-#plt.plot(Jinford[0,Jinford[7,:]==0], -np.log(1-ecdf0(Jinford[0,Jinford[7,:]==0])),c='green')
-#plt.plot(Jinford[0,Jinford[7,:]==1], -np.log(1-ecdf1(Jinford[0,Jinford[7,:]==1])),c='orange')
+plt.plot(Jinford[0,Jinford[7,:]==0], -np.log(1-ecdf0(Jinford[0,Jinford[7,:]==0])),c='green')
+plt.plot(Jinford[0,Jinford[7,:]==1], -np.log(1-ecdf1(Jinford[0,Jinford[7,:]==1])),c='orange')
 
 
-q=np.multiply(np.asmatrix(Jinford[6,Jinford[7,:]==1]).transpose(),np.exp(model.model.forward(Xt[Jinford[1,Jinford[7,:]==1].astype(int),:]).detach().numpy()))
-q0=np.multiply(np.asmatrix(Jinford[6,Jinford[7,:]==0]).transpose(),np.exp(model.model.forward(Xt[Jinford[1,Jinford[7,:]==0].astype(int),:]).detach().numpy()))
+q=np.multiply(np.asmatrix(Jinford[6,Jinford[7,:]==1]).transpose(),np.exp(model.model.forward(Xt1[Jinford[1,Jinford[7,:]==1].astype(int),:]).detach().numpy()))
+q0=np.multiply(np.asmatrix(Jinford[6,Jinford[7,:]==0]).transpose(),np.exp(model.model.forward(Xt0[Jinford[1,Jinford[7,:]==0].astype(int),:]).detach().numpy()))
 # NEVER FORGET WE ARE ESTIMATING H_ZERO!!!!!!
 
 plt.scatter(Jinford[0,Jinford[7,:]==0],np.asarray(q0),s=0.5,c='blue')
 plt.scatter(Jinford[0,Jinford[7,:]==1],np.asarray(q),s=0.5,c='red')
+
+
+
 
 
 

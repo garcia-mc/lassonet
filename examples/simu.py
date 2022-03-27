@@ -24,7 +24,7 @@ zt=torch.bernoulli(a)
 
 z=zt.numpy()
 
-data=cox_gen(z,[3.1]) # 999 means infinity
+data=cox_gen(z,[1.5]) # 999 means infinity
 
 y=data.round(5)
 
@@ -53,7 +53,7 @@ from interfaces import LassoNetRegressor
 
 
 model = LassoNetRegressor(
-    hidden_dims=(10,),
+    hidden_dims=(5,),
     eps_start=0.1,
     verbose=True,
 )
@@ -61,7 +61,7 @@ model = LassoNetRegressor(
 # X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 
-path = model.path(X, y) #pick lambda=0.2 M=
+path = model.path(X, y) #pick lambda=0.2 M=5 upgrade losses each 20 epochs
 
 path1=path
 
