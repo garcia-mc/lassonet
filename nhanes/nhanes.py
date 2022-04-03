@@ -7,6 +7,8 @@ Created on Sat Apr  2 09:44:17 2022
 """
 from sklearn.datasets import load_diabetes
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+
 from sklearn.preprocessing import scale
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -24,6 +26,8 @@ C=datos[1:,7].astype(int)
 T=datos[1:,8].astype(int)
 
 age=np.expand_dims(datos[1:,41],axis=1).astype(float)
+bmicont=np.expand_dims(datos[1:,20],axis=1).astype(float)
+tac=np.expand_dims(datos[1:,60],axis=1).astype(float)
 
 np.max(age)
 
@@ -37,6 +41,7 @@ diabetes=datos[1:,[24]].squeeze()
 cancer=datos[1:,[27]].squeeze()
 stroke=datos[1:,[28]].squeeze()
 race=datos[1:,[22]].squeeze()
+gender=datos[1:,[23]].squeeze()
 
 np.unique(race)
 
@@ -53,12 +58,15 @@ one_hot=one_hot[:,:-1].astype(int)
 
 funbmi=lambda x : 1 if x=='"Normal"' else 0
 funcan=lambda x : 1 if x=='"Yes"' else 0
+fungen=lambda x : 1 if x=='"Female"' else 0
 
 
-bmi=np.expand_dims([funbmi(x) for x in bmi],axis=1).astype(int)
+#bmi=np.expand_dims([funbmi(x) for x in bmi],axis=1).astype(int)
 cancer=np.expand_dims([funcan(x) for x in cancer],axis=1).astype(int)
 stroke=np.expand_dims([funcan(x) for x in stroke],axis=1).astype(int)
 diabetes=np.expand_dims([funcan(x) for x in diabetes],axis=1).astype(int)
+gender=np.expand_dims([fungen(x) for x in gender],axis=1).astype(int)
+
 
 
 left=[t-1 for t in T]
@@ -67,7 +75,7 @@ delta1=np.zeros(len(right))
 delta2=C
 delta3=[1-c for c in C]
 mid=(left+right)/2
-X = np.concatenate([age,X2,probably_fake],axis=1)
+X = np.concatenate([age,X2,bmicont],axis=1)
 y = np.stack([left,right,delta1,delta2,delta3,mid], axis=1)
 
 #feature_names = list(dataset.feature_names) + ["fake"] * true_features
@@ -78,15 +86,15 @@ y = np.stack([left,right,delta1,delta2,delta3,mid], axis=1)
 
 
 # standardize
-X = StandardScaler().fit_transform(X)
+X = MinMaxScaler().fit_transform(X)
 
 
 
-X = np.concatenate([bmi,cancer,stroke,diabetes,one_hot,X],axis=1)
+X = np.concatenate([gender,cancer,stroke,diabetes,one_hot,X],axis=1)
 Xnp=X
 
 import torch
-X=torch.from_numpy(X).float()
+X=torch.from_numpy(Xnp).float()
 
 
 

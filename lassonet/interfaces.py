@@ -55,8 +55,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         dropout=0,
         batch_size=None,
         optim=None,
-        n_iters=(700, 1000),
-        patience=(700, 1000),#(10, 5),
+        n_iters=(1000, 1000),
+        patience=(1000, 1000),#(10, 5),
         tol=0.99,
         backtrack=False,
         val_size=0.3,
@@ -65,7 +65,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         random_state=None,
         torch_seed=None,
         final_run=True,
-        final_lambda=5
+        final_lambda=0.05
     ):
         """
         Parameters
@@ -229,7 +229,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             
             with torch.no_grad():
                 model.eval()
-                if ((epoch % 10 == 0) and denseflag):
+                if ((epoch % 20 == 0) and denseflag):
                    
                     print('Starting validation loss fit')
                 # print('X_val',X_val)
@@ -268,7 +268,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             print('epoch: ', epoch)
             indices = randperm(n_train)
             model.train()
-            if ((epoch % 10 == 0) and denseflag):
+            if ((epoch % 20 == 0) and denseflag):
                 with torch.no_grad():
                     model.eval()
                     print('Starting training loss fit')
