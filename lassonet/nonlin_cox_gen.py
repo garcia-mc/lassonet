@@ -17,7 +17,7 @@ def strong_linear():
     # noise = np.random.randn(n)
     x1, x2, x3, *_ = X.T
     nonlinear = 2 * (x1 ** 3 - 3 * x1) + 4 * (x2 ** 2 * x3 - x3)
-    y =  linear/3  + nonlinear/5 #8 * noise
+    y =  linear  + nonlinear/5 #8 * noise
     return X, y, coef
 
 def nonlin_cox_gen(covariates,m):

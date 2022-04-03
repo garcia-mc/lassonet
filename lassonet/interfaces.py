@@ -47,16 +47,16 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         hidden_dims=(100,),
         eps_start=1,
         lambda_start=None,
-        lambda_seq= np.exp(np.linspace(np.log(0.01),np.log(5),20)),
+        lambda_seq= np.exp(np.linspace(np.log(0.005),np.log(20),20)),
         gamma=0.0,
         gamma_skip=0.0,
         path_multiplier=1.02,
-        M=50,
+        M=10,
         dropout=0,
         batch_size=None,
         optim=None,
-        n_iters=(1000, 100),
-        patience=(700, 70),
+        n_iters=(700, 1000),
+        patience=(700, 1000),#(10, 5),
         tol=0.99,
         backtrack=False,
         val_size=0.3,
@@ -65,7 +65,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         random_state=None,
         torch_seed=None,
         final_run=True,
-        final_lambda=0
+        final_lambda=5
     ):
         """
         Parameters
@@ -133,8 +133,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         self.optim = optim
         if optim is None:
             optim = (
-                partial(torch.optim.Adam, lr=3e-2),
-                partial(torch.optim.SGD, lr=3e-2, momentum=0.9),
+                partial(torch.optim.Adam, lr=1e-3),
+                partial(torch.optim.SGD, lr=1e-3, momentum=0.9),
             )
         if isinstance(optim, partial):
             optim = (optim, optim)
@@ -229,7 +229,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             
             with torch.no_grad():
                 model.eval()
-                if ((epoch % 50 == 0) and denseflag):
+                if ((epoch % 10 == 0) and denseflag):
                    
                     print('Starting validation loss fit')
                 # print('X_val',X_val)
@@ -268,7 +268,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             print('epoch: ', epoch)
             indices = randperm(n_train)
             model.train()
-            if ((epoch % 50 == 0) and denseflag):
+            if ((epoch % 10 == 0) and denseflag):
                 with torch.no_grad():
                     model.eval()
                     print('Starting training loss fit')
@@ -424,7 +424,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             self.model.eval()
             preproc_full=preproc(y)
             self.mnonpar_full=L(preproc_full,X.numpy()) 
-            self.mnonpar_full.fit(self.model(X),50)
+            self.mnonpar_full.fit(self.model(X),100)
         if self.verbose:
             print(
                 f"Initialized dense model in {hist[-1].n_iters} epochs, "
