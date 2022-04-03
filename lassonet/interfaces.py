@@ -65,7 +65,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         random_state=None,
         torch_seed=None,
         final_run=True,
-        final_lambda=5
+        final_lambda=0.05
     ):
         """
         Parameters
